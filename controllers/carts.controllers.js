@@ -35,7 +35,10 @@ module.exports.cartsControllers = {
         try {
             let client = await User.findById(req.params.userId);
             let cart_ = await Cart.findById(req.body.cartId);
-            if (cart_.items.length <= 0) {
+            if (cart_.user_id !== client._id){
+                res.json("this not your cart")
+            }
+            else if (cart_.items.length <= 0) {
                 res.json('Your cart is empty');
             }
             else if (cart_.totalPrice > client.wallet) {
@@ -70,14 +73,15 @@ module.exports.cartsControllers = {
         try {
             const med = await Medicine.findById(req.params.medId);
             const cart_ = await Cart.findById(req.body.cartId);
-            await cart_.updateOne({
-                $pull: {
-                    items: req.params.medId,
-                }
-            })
-            cart_.totalPrice -= med.price;
-            cart_.save();
-            res.json('Medicine was removed');
+            if(cart_.items.includes(req.params.medId)){
+                cart_.items.pop(req.params.medId)
+                cart_.totalPrice -= med.price;
+                cart_.save();
+                res.json('Medicine was removed');
+            }
+            else{
+                res.json('Ther is not this medicine in your cart');
+            }
         } catch (err) {
             res.json(err.message);
         }
